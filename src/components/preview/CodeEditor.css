@@ -1,0 +1,65 @@
+.code-editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #1e1e1e;
+    /* Standard dark theme editor background */
+    margin: 1rem 1rem 0 1rem;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.editor-header {
+    height: 2.5rem;
+    background: #2d2d2d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    border-bottom: 1px solid #404040;
+}
+
+.file-name {
+    color: #d4d4d4;
+    font-size: 0.875rem;
+    font-family: monospace;
+}
+
+.copy-btn {
+    background: none;
+    border: none;
+    color: #858585;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: color 0.2s;
+}
+
+.copy-btn:hover {
+    color: #fff;
+}
+
+.editor-content {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+.code-block {
+    margin: 0;
+    padding: 1.5rem;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    tab-size: 2;
+}
+
+/* Empty state styling shared with preview */
+.editor-content .empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
