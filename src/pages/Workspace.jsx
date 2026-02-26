@@ -174,7 +174,6 @@ Core Engineering Principles:
                 }
             };
 
-            // 2. Fetch from Gemini REST API
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAypZOFLoJq8LccQAqv4Lt7YulJaCDVNmY';
 
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`, {
