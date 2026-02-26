@@ -182,11 +182,13 @@ Core Engineering Principles:
                 body: JSON.stringify(payload)
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error('Failed to generate response');
+                console.error("Gemini API Error Payload:", data);
+                throw new Error(data.error?.message || 'Failed to generate response');
             }
 
-            const data = await response.json();
             const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
             // 3. Parse and Split response into Chat text vs Code blocks
