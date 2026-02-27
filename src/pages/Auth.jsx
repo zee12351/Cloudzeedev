@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import './Auth.css';
 
@@ -9,6 +10,10 @@ export default function Auth() {
     const [isLogin, setIsLogin] = useState(true);
     const [message, setMessage] = useState({ text: '', type: '' });
 
+    const location = useLocation();
+    const navigate = useNavigate();
+    const initialPrompt = location.state?.initialPrompt;
+
     const handleAuth = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -18,6 +23,10 @@ export default function Auth() {
             if (isLogin) {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                // If there's an initial prompt, route directly to workspace instead of dashboard
+                if (initialPrompt) {
+                    navigate('/workspace/new', { state: { initialPrompt } });
+                }
             } else {
                 const { error } = await supabase.auth.signUp({ email, password });
                 if (error) throw error;
