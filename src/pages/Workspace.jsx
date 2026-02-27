@@ -15,6 +15,7 @@ export default function Workspace({ session }) {
     ]);
     const [activeTab, setActiveTab] = useState('preview');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [loadedChatId, setLoadedChatId] = useState(null);
     const [code, setCode] = useState('');
     const [credits, setCredits] = useState(null);
     const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
@@ -65,6 +66,7 @@ export default function Workspace({ session }) {
                         // Reset to default greeting if no history exists for this id
                         setMessages([{ role: 'ai', content: 'Hi there! What would you like to build today?' }]);
                     }
+                    setLoadedChatId(id);
                 }
             }
         }
@@ -103,11 +105,11 @@ export default function Workspace({ session }) {
 
     // Auto-save messages on change per project
     useEffect(() => {
-        if (session?.user?.id && id && messages.length > 0) {
+        if (loadedChatId === id && session?.user?.id && id && messages.length > 0) {
             const messagesKey = `cloudzeedev_messages_${session.user.id}_${id}`;
             localStorage.setItem(messagesKey, JSON.stringify(messages));
         }
-    }, [messages, session, id]);
+    }, [messages, session, id, loadedChatId]);
 
     // Auto-save code on change (Debounced to prevent spam)
     useEffect(() => {
