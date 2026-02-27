@@ -27,7 +27,7 @@ export default function Pricing() {
                         </div>
                         <p className="tier-desc">shared across unlimited users</p>
 
-                        <button className="btn btn-primary upgrade-btn w-full mt-6">Upgrade</button>
+                        <a href="https://cloudzeedev.lemonsqueezy.com/checkout/buy/pro-plan" target="_blank" rel="noopener noreferrer" className="btn btn-primary upgrade-btn w-full mt-6 text-center inline-block">Upgrade</a>
                         <div className="credit-select mt-4 text-center text-sm text-neutral-400">
                             20 credits / month
                         </div>
@@ -60,7 +60,7 @@ export default function Pricing() {
                         </div>
                         <p className="tier-desc">shared across unlimited users</p>
 
-                        <button className="btn btn-primary upgrade-btn w-full mt-6">Upgrade</button>
+                        <a href="https://cloudzeedev.lemonsqueezy.com/checkout/buy/business-plan" target="_blank" rel="noopener noreferrer" className="btn btn-primary upgrade-btn w-full mt-6 text-center inline-block">Upgrade</a>
                         <div className="credit-select mt-4 text-center text-sm text-neutral-400">
                             100 credits / month
                         </div>
