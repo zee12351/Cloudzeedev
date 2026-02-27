@@ -31,7 +31,7 @@ function App() {
       <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/dashboard" />} />
       <Route path="/dashboard" element={session ? <Dashboard session={session} /> : <Navigate to="/auth" />} />
       <Route path="/workspace/:id" element={session ? <Workspace session={session} /> : <Navigate to="/auth" />} />
-      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/pricing" element={<Pricing session={session} />} />
       <Route path="/live" element={<LivePreview />} />
     </Routes>
   );
