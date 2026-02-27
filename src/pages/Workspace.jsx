@@ -358,7 +358,7 @@ Core Engineering Principles:
                     {activeTab === 'preview' ? (
                         <CodePreview code={code} />
                     ) : (
-                        <CodeEditor code={code} />
+                        <CodeEditor code={code} onChange={setCode} />
                     )}
                 </div >
             </div >
