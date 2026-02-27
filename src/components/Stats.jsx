@@ -9,7 +9,7 @@ export default function Stats() {
     ];
 
     return (
-        <section className="stats-section">
+        <section id="community" className="stats-section">
             <div className="container text-center">
                 <h2 className="stats-title">
                     CloudzeeDev <span className="text-gradient">in numbers</span>

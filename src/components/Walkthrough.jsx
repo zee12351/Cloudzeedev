@@ -21,7 +21,7 @@ export default function Walkthrough() {
     ];
 
     return (
-        <section className="walkthrough-section">
+        <section id="features" className="walkthrough-section">
             <div className="container">
                 <h2 className="walkthrough-title text-center">Meet CloudzeeDev</h2>
 
