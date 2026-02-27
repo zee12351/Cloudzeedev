@@ -53,17 +53,24 @@ export default function Workspace({ session }) {
                 }
 
                 if (isMounted) {
-                    // Load saved messages specifically for this project or new state
-                    const messagesKey = `cloudzeedev_messages_${session.user.id}_${id}`;
-                    const savedMessages = localStorage.getItem(messagesKey);
-                    if (savedMessages) {
-                        try {
-                            setMessages(JSON.parse(savedMessages));
-                        } catch (e) {
-                            console.error("Failed to parse saved messages", e);
+                    try {
+                        // Load saved messages from Supabase
+                        const { data: dbMessages, error: msgError } = await supabase
+                            .from('project_messages')
+                            .select('role, content')
+                            .eq('project_id', id)
+                            .order('created_at', { ascending: true });
+
+                        if (msgError) throw msgError;
+
+                        if (dbMessages && dbMessages.length > 0) {
+                            setMessages(dbMessages);
+                        } else {
+                            // Reset to default greeting if no history exists for this id
+                            setMessages([{ role: 'ai', content: 'Hi there! What would you like to build today?' }]);
                         }
-                    } else {
-                        // Reset to default greeting if no history exists for this id
+                    } catch (e) {
+                        console.error("Failed to load saved messages", e);
                         setMessages([{ role: 'ai', content: 'Hi there! What would you like to build today?' }]);
                     }
                     setLoadedChatId(id);
@@ -103,12 +110,43 @@ export default function Workspace({ session }) {
         return () => { isMounted = false; };
     }, [session]);
 
-    // Auto-save messages on change per project
+    // Auto-save messages to Supabase when they change per project
     useEffect(() => {
-        if (loadedChatId === id && session?.user?.id && id && messages.length > 0) {
-            const messagesKey = `cloudzeedev_messages_${session.user.id}_${id}`;
-            localStorage.setItem(messagesKey, JSON.stringify(messages));
+        let isWriting = false;
+
+        async function saveMessagesToCloud() {
+            if (isWriting || loadedChatId !== id || !session?.user?.id || !id || id === 'new' || messages.length === 0) return;
+            isWriting = true;
+
+            try {
+                // Determine the last message added to conditionally insert it
+                // For a robust implementation we might wipe and rewrite, but for performance
+                // we'll assume messages only get appended. We delete all and re-insert for sync simplicity right now.
+                // A better approach in V3 would be tracking the message IDs.
+                await supabase.from('project_messages').delete().eq('project_id', id);
+
+                const inserts = messages.map(msg => ({
+                    project_id: id,
+                    role: msg.role === 'ai' ? 'ai' : msg.role,
+                    content: msg.content
+                }));
+
+                if (inserts.length > 0) {
+                    await supabase.from('project_messages').insert(inserts);
+                }
+            } catch (e) {
+                console.error("Failed to save messages to cloud", e);
+            } finally {
+                isWriting = false;
+            }
         }
+
+        const timeoutId = setTimeout(() => {
+            saveMessagesToCloud();
+        }, 1000); // Debounce DB writes by 1s
+
+        return () => clearTimeout(timeoutId);
+
     }, [messages, session, id, loadedChatId]);
 
     // Auto-save code on change (Debounced to prevent spam)
@@ -251,11 +289,15 @@ Core Engineering Principles:
                         if (data && data.id) {
                             setProjectName(data.name);
 
-                            // Auto-save messages to new project ID storage
-                            const newMessagesKey = `cloudzeedev_messages_${session.user.id}_${data.id}`;
+                            // Auto-save messages to new project ID database storage
                             const updatedMessages = [...newMessages, { role: 'ai', content: chatResponse || 'Here is your generated code!' }];
-                            localStorage.setItem(newMessagesKey, JSON.stringify(updatedMessages));
-                            localStorage.removeItem(`cloudzeedev_messages_${session.user.id}_new`);
+                            const inserts = updatedMessages.map(msg => ({
+                                project_id: data.id,
+                                role: msg.role === 'ai' ? 'ai' : msg.role,
+                                content: msg.content
+                            }));
+
+                            await supabase.from('project_messages').insert(inserts);
 
                             navigate(`/workspace/${data.id}`, { replace: true });
                         }
