@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 import './Header.css';
 
-export default function Header({ session }) {
+export default function Header() {
+    const { session } = useAuth();
     const [scrolled, setScrolled] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();

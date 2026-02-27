@@ -6,8 +6,11 @@ import CodePreview from '../components/preview/CodePreview';
 import CodeEditor from '../components/preview/CodeEditor';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
+import { useAuth } from '../context/AuthContext';
 
-export default function Workspace({ session }) {
+export default function Workspace() {
+    const { session } = useAuth();
     const { id } = useParams();
     const [projectName, setProjectName] = useState('Untitled Project');
     const [messages, setMessages] = useState([
@@ -209,7 +212,7 @@ Core Engineering Principles:
 5. Visual Polish: Implement backdrop-blur, subtle borders (border-white/10), and smooth transitions (transition-all duration-300).
 6. Smart Defaults: If a user asks for a "button," don't just give a <button>. Give a beautifully styled, rounded, animated button with a hover state. If they ask for a "landing page," include a Hero, Features Grid, and Footer by default.
 7. Logic & State: Ensure all forms have validation states and all interactive elements are functional using Framer Motion for animations.
-8. Output Format: Output conversational text first, then exactly ONE code block starting with \`\`\`jsx and ending with \`\`\`. Do not use \`\`\`javascript. The React code must be a single file using Tailwind CSS classes for styling. DO NOT export multiple components. Use a default export for the main component.
+8. Output Format: Output conversational text first, then exactly ONE code block starting with \`\`\`json and ending with \`\`\`. The JSON object MUST map file paths as keys (e.g., "/App.js", "/components/Header.js") to their string code as values. The main entry point MUST be "/App.js".
 9. The Goal: Every output must look like a $50k/month SaaS product. Do not settle for "basic" or "placeholder" styles. Use lucide-react for beautiful icons.`;
 
             const contents = newMessages.map(msg => ({
@@ -221,7 +224,7 @@ Core Engineering Principles:
             const payload = {
                 contents: [
                     { role: 'user', parts: [{ text: systemPrompt }] },
-                    { role: 'model', parts: [{ text: "Understood. I will act as the CloudzeeDev AI developer according to those rules and output ```jsx blocks." }] },
+                    { role: 'model', parts: [{ text: "Understood. I will act as the CloudzeeDev AI developer according to those rules and output exactly ONE ```json block containing the multi-file architecture." }] },
                     ...contents
                 ],
                 generationConfig: {
@@ -246,16 +249,15 @@ Core Engineering Principles:
 
             const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-            // 3. Parse and Split response into Chat text vs Code blocks
-            // This regex flexibly matches ```jsx, ```javascript, ```tsx, or just ```
-            const codeBlockRegex = /\`\`\`(jsx|js|javascript|tsx|ts)?\n([\s\S]*?)\n\`\`\`/i;
+            // 3. Parse and Split response into Chat text vs JSON Code blocks
+            const codeBlockRegex = /\`\`\`(?:json)?\n([\s\S]*?)\n\`\`\`/i;
             const match = generatedText.match(codeBlockRegex);
 
             let chatResponse = generatedText;
             let generatedCode = '';
 
             if (match) {
-                generatedCode = match[2]; // Capture group 2 is the actual code content
+                generatedCode = match[1]; // Capture group 1 is the actual JSON string content
                 // Remove the code block from the chat output
                 chatResponse = generatedText.replace(match[0], '').trim();
             }
@@ -303,7 +305,7 @@ Core Engineering Principles:
                         }
                     } catch (e) {
                         console.error("Failed to create new project in Database", e);
-                        alert("Failed to auto-save project.");
+                        toast.error("Failed to auto-save project.");
                     }
                 }
             }
@@ -376,7 +378,7 @@ Core Engineering Principles:
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" /></svg>
                                     X (Twitter)
                                 </a>
-                                <button onClick={() => { navigator.clipboard.writeText('https://cloudzeedev.app'); alert('Link copied!'); setIsShareOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 cursor-pointer border-t border-gray-100 mt-1 pt-2">
+                                <button onClick={() => { navigator.clipboard.writeText('https://cloudzeedev.app'); toast.success('Link copied to clipboard!'); setIsShareOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 cursor-pointer border-t border-gray-100 mt-1 pt-2">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
                                     Copy Link
                                 </button>
@@ -450,14 +452,14 @@ Core Engineering Principles:
                                                         .eq('id', id);
 
                                                     if (error) throw error;
-                                                    alert(`Project successfully updated to ${publishType}!`);
+                                                    toast.success(`Project successfully updated to ${publishType}!`);
                                                 } catch (e) {
                                                     console.error("Failed to update project type", e);
-                                                    alert(`Failed to publish project: ${e.message || e.details || "Unknown error"}`);
+                                                    toast.error(`Failed to publish project: ${e.message || e.details || "Unknown error"}`);
                                                 }
                                             }
                                         } else {
-                                            alert("No project context available to publish!");
+                                            toast.error("No project context available to publish!");
                                         }
                                         setIsPublishModalOpen(false);
                                     }}

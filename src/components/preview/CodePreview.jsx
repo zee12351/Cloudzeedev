@@ -29,9 +29,27 @@ export default function CodePreview({ code }) {
         </div>
       </div>
     </div>
+    </div>
   )
 }
 `;
+
+  let parsedFiles = { "/App.js": code || defaultAppCode };
+  if (code) {
+    try {
+      const parsed = JSON.parse(code);
+      if (typeof parsed === 'object') {
+        parsedFiles = parsed;
+        // Ensure there's an App.js mapping
+        if (!parsedFiles['/App.js'] && parsedFiles['App.js']) {
+          parsedFiles['/App.js'] = parsedFiles['App.js'];
+          delete parsedFiles['App.js'];
+        }
+      }
+    } catch (e) {
+      // not JSON, fallback to treating it as raw App.js code
+    }
+  }
 
   // HTML index to inject Tailwind CSS via CDN so generated classes work
   const indexHtml = `<!DOCTYPE html>
@@ -86,7 +104,7 @@ export default function CodePreview({ code }) {
             template="react"
             theme="dark"
             files={{
-              "/App.js": code || defaultAppCode,
+              ...parsedFiles,
               "/public/index.html": indexHtml,
             }}
             customSetup={{

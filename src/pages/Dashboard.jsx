@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate, Link } from 'react-router-dom';
 import { SandpackProvider, SandpackPreview } from "@codesandbox/sandpack-react";
+import { toast } from 'sonner';
+import { useAuth } from '../context/AuthContext';
 import './Dashboard.css';
 
-export default function Dashboard({ session }) {
+export default function Dashboard() {
+    const { session } = useAuth();
     const navigate = useNavigate();
     const [publishedProjects, setPublishedProjects] = useState([]);
 
@@ -62,7 +65,7 @@ export default function Dashboard({ session }) {
                 setPublishedProjects(updatedProjects);
             } catch (err) {
                 console.error("Error deleting project:", err);
-                alert("Failed to delete project from the database.");
+                toast.error("Failed to delete project from the database.");
             }
         }
     };

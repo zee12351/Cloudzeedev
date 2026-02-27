@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import './Pricing.css';
 
-export default function Pricing({ session }) {
+export default function Pricing() {
     return (
         <div className="pricing-page">
-            <Header session={session} />
+            <Header />
             <main className="pricing-container animate-fade-in">
                 <div className="pricing-header">
                     <h1 className="text-gradient font-bold">Simple, transparent pricing</h1>

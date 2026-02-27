@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Hero.css';
 
-export default function Hero({ session }) {
+export default function Hero() {
+    const { session } = useAuth();
     const [prompt, setPrompt] = useState('');
     const navigate = useNavigate();
     const fileInputRef = useRef(null);

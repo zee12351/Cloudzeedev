@@ -29,13 +29,27 @@ export default function LivePreview() {
   </body>
 </html>`;
 
+    let parsedFiles = { "/App.js": code };
+    try {
+        const parsed = JSON.parse(code);
+        if (typeof parsed === 'object') {
+            parsedFiles = parsed;
+            if (!parsedFiles['/App.js'] && parsedFiles['App.js']) {
+                parsedFiles['/App.js'] = parsedFiles['App.js'];
+                delete parsedFiles['App.js'];
+            }
+        }
+    } catch (e) {
+        // Fallback for legacy single-file projects
+    }
+
     return (
         <div className="h-screen w-full bg-[#0A0A0A] overflow-hidden">
             <SandpackProvider
                 template="react"
                 theme="dark"
                 files={{
-                    "/App.js": code,
+                    ...parsedFiles,
                     "/public/index.html": indexHtml,
                 }}
                 customSetup={{
