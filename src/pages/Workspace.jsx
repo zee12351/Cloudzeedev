@@ -16,7 +16,7 @@ export default function Workspace({ session }) {
     const [activeTab, setActiveTab] = useState('preview');
     const [isGenerating, setIsGenerating] = useState(false);
     const [code, setCode] = useState('');
-    const [credits, setCredits] = useState(0);
+    const [credits, setCredits] = useState(null);
     const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [publishType, setPublishType] = useState('public');
@@ -252,8 +252,9 @@ Core Engineering Principles:
     };
 
     // Auto-Kickoff effect for Prompts coming from Hero Landing Page
+    // Only fire this AFTER credits have been loaded from Supabase to prevent false "out of credits" errors
     useEffect(() => {
-        if (location.state?.initialPrompt && session?.user?.id) {
+        if (location.state?.initialPrompt && session?.user?.id && credits !== null) {
             const initialPrompt = location.state.initialPrompt;
             // Clear route state to prevent infinite loops on reload
             navigate(location.pathname, { replace: true, state: {} });
@@ -263,7 +264,7 @@ Core Engineering Principles:
                 handleSendMessage(initialPrompt);
             }, 500);
         }
-    }, [location.state?.initialPrompt, session, navigate]);
+    }, [location.state?.initialPrompt, session, navigate, credits]);
 
     return (
         <div className="workspace-container">
