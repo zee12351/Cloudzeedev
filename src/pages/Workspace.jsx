@@ -28,20 +28,43 @@ export default function Workspace({ session }) {
         let isMounted = true;
 
         async function loadProject() {
-            if (session?.user?.id && id && id !== 'new') {
-                try {
-                    const { data, error } = await supabase
-                        .from('projects')
-                        .select('name, code')
-                        .eq('id', id)
-                        .single();
+            if (session?.user?.id && id) {
+                if (id !== 'new') {
+                    try {
+                        const { data, error } = await supabase
+                            .from('projects')
+                            .select('name, code')
+                            .eq('id', id)
+                            .single();
 
-                    if (!error && data && isMounted) {
-                        setProjectName(data.name);
-                        setCode(data.code);
+                        if (!error && data && isMounted) {
+                            setProjectName(data.name);
+                            setCode(data.code || '');
+                        }
+                    } catch (e) {
+                        console.error("Error loading project data", e);
                     }
-                } catch (e) {
-                    console.error("Error loading project data", e);
+                } else {
+                    if (isMounted) {
+                        setProjectName('Untitled Project');
+                        setCode('');
+                    }
+                }
+
+                if (isMounted) {
+                    // Load saved messages specifically for this project or new state
+                    const messagesKey = `cloudzeedev_messages_${session.user.id}_${id}`;
+                    const savedMessages = localStorage.getItem(messagesKey);
+                    if (savedMessages) {
+                        try {
+                            setMessages(JSON.parse(savedMessages));
+                        } catch (e) {
+                            console.error("Failed to parse saved messages", e);
+                        }
+                    } else {
+                        // Reset to default greeting if no history exists for this id
+                        setMessages([{ role: 'ai', content: 'Hi there! What would you like to build today?' }]);
+                    }
                 }
             }
         }
@@ -70,17 +93,6 @@ export default function Workspace({ session }) {
                 } catch (e) {
                     console.error("Failed to load live credits", e);
                 }
-
-                // Load saved messages
-                const messagesKey = `cloudzeedev_messages_${session.user.id}`;
-                const savedMessages = localStorage.getItem(messagesKey);
-                if (savedMessages) {
-                    try {
-                        setMessages(JSON.parse(savedMessages));
-                    } catch (e) {
-                        console.error("Failed to parse saved messages", e);
-                    }
-                }
             }
         }
 
@@ -89,13 +101,13 @@ export default function Workspace({ session }) {
         return () => { isMounted = false; };
     }, [session]);
 
-    // Auto-save messages on change
+    // Auto-save messages on change per project
     useEffect(() => {
-        if (session?.user?.id && messages.length > 1) {
-            const messagesKey = `cloudzeedev_messages_${session.user.id}`;
+        if (session?.user?.id && id && messages.length > 0) {
+            const messagesKey = `cloudzeedev_messages_${session.user.id}_${id}`;
             localStorage.setItem(messagesKey, JSON.stringify(messages));
         }
-    }, [messages, session]);
+    }, [messages, session, id]);
 
     // Auto-save code on change (Debounced to prevent spam)
     useEffect(() => {
@@ -233,6 +245,13 @@ Core Engineering Principles:
 
                         if (data && data.id) {
                             setProjectName(data.name);
+
+                            // Auto-save messages to new project ID storage
+                            const newMessagesKey = `cloudzeedev_messages_${session.user.id}_${data.id}`;
+                            const updatedMessages = [...newMessages, { role: 'ai', content: chatResponse || 'Here is your generated code!' }];
+                            localStorage.setItem(newMessagesKey, JSON.stringify(updatedMessages));
+                            localStorage.removeItem(`cloudzeedev_messages_${session.user.id}_new`);
+
                             navigate(`/workspace/${data.id}`, { replace: true });
                         }
                     } catch (e) {
