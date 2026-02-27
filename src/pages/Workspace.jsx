@@ -131,20 +131,23 @@ export default function Workspace({ session }) {
 
     const handleSendMessage = async (messageContent) => {
         let currentCredits = credits;
+        const isUnlimited = session?.user?.email === 'zeepharma1@gmail.com';
 
-        if (currentCredits <= 0) {
+        if (!isUnlimited && currentCredits <= 0) {
             setMessages(prev => [...prev, { role: 'ai', content: 'You have run out of credits! Please upgrade your plan to continue building.' }]);
             return;
         }
 
-        // Deduct 1 credit
+        // Deduct 1 credit if not unlimited
         const newCreditBalance = currentCredits - 1;
-        setCredits(newCreditBalance);
+        if (!isUnlimited) {
+            setCredits(newCreditBalance);
 
-        try {
-            await supabase.from('profiles').update({ credits: newCreditBalance }).eq('id', session.user.id);
-        } catch (e) {
-            console.error("Failed to deduct live credit", e);
+            try {
+                await supabase.from('profiles').update({ credits: newCreditBalance }).eq('id', session.user.id);
+            } catch (e) {
+                console.error("Failed to deduct live credit", e);
+            }
         }
 
         // Add user message
@@ -308,8 +311,8 @@ Core Engineering Principles:
                     </button>
                 </div>
                 <div className="header-right flex items-center gap-4">
-                    <Link to="/pricing" className={`text - sm px - 3 py - 1 rounded - full border ${credits > 5 ? 'border-gray-200 text-gray-500 hover:text-gray-900 bg-white' : 'border-red-200 text-red-600 bg-red-50'} `}>
-                        <span className="font-medium">{credits}</span> credits remaining
+                    <Link to="/pricing" className={`text-sm px-3 py-1 rounded-full border ${session?.user?.email === 'zeepharma1@gmail.com' || credits > 5 ? 'border-gray-200 text-gray-500 hover:text-gray-900 bg-white' : 'border-red-200 text-red-600 bg-red-50'} `}>
+                        <span className="font-medium">{session?.user?.email === 'zeepharma1@gmail.com' ? 'Unlimited' : credits}</span> credits remaining
                     </Link>
                     <button onClick={() => setIsPublishModalOpen(true)} className="btn btn-secondary share-btn px-4">Publish</button>
 
