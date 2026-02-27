@@ -406,7 +406,7 @@ Core Engineering Principles:
                                                     alert(`Project successfully updated to ${publishType}!`);
                                                 } catch (e) {
                                                     console.error("Failed to update project type", e);
-                                                    alert("Failed to publish project.");
+                                                    alert(`Failed to publish project: ${e.message || e.details || "Unknown error"}`);
                                                 }
                                             }
                                         } else {
