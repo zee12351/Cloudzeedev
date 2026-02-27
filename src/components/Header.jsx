@@ -54,6 +54,9 @@ export default function Header({ session }) {
                             <span className="user-email text-sm text-gray-500 mr-4 hidden md:inline-block">
                                 {session.user.email}
                             </span>
+                            <Link to="/dashboard" className="btn btn-primary text-sm px-4 py-2 mr-3 rounded-full shadow-sm">
+                                Dashboard
+                            </Link>
                             <button onClick={handleSignOut} className="btn text-sm px-4 py-2 border border-gray-200 rounded-full hover:bg-gray-50 text-gray-700 bg-white">
                                 Sign out
                             </button>
