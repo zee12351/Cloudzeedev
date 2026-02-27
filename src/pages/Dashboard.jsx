@@ -73,87 +73,147 @@ export default function Dashboard({ session }) {
     };
 
     return (
-        <div className="dashboard-page">
-            <header className="dashboard-header glass">
-                <div className="container header-container">
-                    <Link to="/" className="logo cursor-pointer text-gradient">
-                        <span className="font-bold">CloudzeeDev</span>
+        <div className="dashboard-layout">
+            {/* Dark Sidebar */}
+            <aside className="dashboard-sidebar">
+                <div className="sidebar-header">
+                    <Link to="/" className="sidebar-logo text-gradient font-bold">
+                        CloudzeeDev
                     </Link>
-
-                    <div className="user-info">
-                        <span className="user-email">{session?.user?.email}</span>
-                        <button onClick={handleSignOut} className="btn btn-secondary">
-                            Sign out
-                        </button>
+                    <div className="sidebar-user-dropdown">
+                        <div className="user-avatar text-white bg-pink-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-2">
+                            {session?.user?.email?.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="user-email truncate">{session?.user?.email}</span>
                     </div>
                 </div>
-            </header>
 
-            <main className="container dashboard-main animate-fade-in">
-                <h1 className="dashboard-title">Welcome to your Workspace</h1>
-                <p className="dashboard-subtitle">
-                    In Phase 2, this is where you will see your agent chat and your live project previews!
-                </p>
+                <nav className="sidebar-nav">
+                    <div className="nav-group">
+                        <Link to="/dashboard" className="sidebar-link active">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+                            Home
+                        </Link>
+                        <button className="sidebar-link w-full text-left">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                            Search
+                        </button>
+                    </div>
 
-                <div className="projects-grid">
-                    <Link to="/workspace/new" className="project-card glass" style={{ textDecoration: 'none', display: 'block' }}>
-                        <div className="project-preview new-project">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
+                    <div className="nav-group mt-6">
+                        <h4 className="nav-group-title">Projects</h4>
+                        <Link to="/dashboard" className="sidebar-link">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            All projects
+                        </Link>
+                        <Link to="/dashboard" className="sidebar-link">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                            Recents
+                        </Link>
+                    </div>
+                </nav>
+
+                <div className="sidebar-footer">
+                    <button className="sidebar-action-card">
+                        <div className="action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 12 20 22 4 22 4 12" /><rect x="2" y="7" width="20" height="5" /><line x1="12" y1="22" x2="12" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></svg></div>
+                        <div className="action-text">
+                            <div className="font-semibold text-white">Share CloudzeeDev</div>
+                            <div className="text-xs text-gray-400">Earn credits per referral</div>
                         </div>
-                        <div className="project-info">
-                            <h3>Create new project</h3>
-                            <p>Start a new AI conversation</p>
+                    </button>
+                    <Link to="/pricing" className="sidebar-action-card upgrade">
+                        <div className="action-icon text-yellow-500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg></div>
+                        <div className="action-text">
+                            <div className="font-semibold text-white">Upgrade to Pro</div>
+                            <div className="text-xs text-gray-400">Unlock more benefits</div>
                         </div>
                     </Link>
+                    <div className="sidebar-bottom-user mt-4 flex items-center justify-between">
+                        <div className="user-avatar text-white bg-pink-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                            {session?.user?.email?.charAt(0).toUpperCase()}
+                        </div>
+                        <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-white transition-colors">Sign out</button>
+                    </div>
+                </div>
+            </aside>
 
-                    {publishedProjects.map(project => (
-                        <div key={project.id} className="project-card glass relative" style={{ textDecoration: 'none', display: 'block' }}>
-                            {/* Kebab Menu Button */}
-                            <div className="absolute top-2 right-2 z-20">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === project.id ? null : project.id); }}
-                                    className="p-1 rounded-md bg-white/50 hover:bg-white/80 transition-colors shadow-sm"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg>
-                                </button>
+            {/* Main Content Area */}
+            <div className="dashboard-content">
+                <main className="dashboard-main animate-fade-in p-8">
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-2">What should we build, {session?.user?.email?.split('@')[0]}?</h1>
+                            <p className="text-gray-400">Pick up where you left off or start something new.</p>
+                        </div>
+                    </div>
 
-                                {menuOpenId === project.id && (
-                                    <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-30 py-1">
-                                        <button onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); handleEditProject(project); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Edit Project</button>
-                                        <button onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); handlePreviewProject(project); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Live Preview</button>
-                                        <button onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); handleDeleteProject(project.id); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Delete</button>
-                                    </div>
-                                )}
+                    <div className="projects-grid">
+                        <Link to="/workspace/new" className="project-card glass shadow-lg border border-gray-800 bg-gray-900/50 hover:bg-gray-800/80 transition-all" style={{ textDecoration: 'none', display: 'block' }}>
+                            <div className="project-preview new-project bg-transparent text-gray-400">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 5v14M5 12h14" /></svg>
                             </div>
+                            <div className="project-info p-4 border-t border-gray-800">
+                                <h3 className="text-white font-semibold">Create new project</h3>
+                                <p className="text-gray-500 text-sm">Start a new AI conversation</p>
+                            </div>
+                        </Link>
 
-                            <div
-                                className="project-preview overflow-hidden relative cursor-pointer"
-                                style={{ height: '160px', width: '100%', background: '#fff' }}
-                                onClick={() => handleEditProject(project)}
-                            >
-                                <div style={{ transform: 'scale(0.35)', transformOrigin: 'top left', width: '286%', height: '286%', pointerEvents: 'none' }}>
-                                    <SandpackProvider
-                                        template="react"
-                                        theme="light"
-                                        files={{
-                                            "/App.js": project.code,
-                                            "/styles.css": `@tailwind base;\n@tailwind components;\n@tailwind utilities;\nbody { font-family: sans-serif; }`,
-                                            "/public/index.html": `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script></head><body><div id="root"></div></body></html>`
-                                        }}
-                                        options={{ externalResources: ["https://cdn.tailwindcss.com"] }}
+                        {publishedProjects.map(project => (
+                            <div key={project.id} className="project-card glass shadow-lg border border-gray-800 bg-gray-900/50 relative" style={{ textDecoration: 'none', display: 'block' }}>
+                                {/* Kebab Menu Button */}
+                                <div className="absolute top-2 right-2 z-20">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === project.id ? null : project.id); }}
+                                        className="p-1 rounded-md bg-gray-800/80 hover:bg-gray-700 transition-colors shadow-sm text-gray-300"
                                     >
-                                        <SandpackPreview showOpenInCodeSandbox={false} showRefreshButton={false} style={{ height: '100vh' }} />
-                                    </SandpackProvider>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg>
+                                    </button>
+
+                                    {menuOpenId === project.id && (
+                                        <div className="absolute right-0 mt-1 w-36 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-30 py-1">
+                                            <button onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); handleEditProject(project); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">Edit Project</button>
+                                            <button onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); handlePreviewProject(project); }} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">Live Preview</button>
+                                            <button onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); handleDeleteProject(project.id); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10">Delete</button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div
+                                    className="project-preview overflow-hidden relative cursor-pointer"
+                                    style={{ height: '180px', width: '100%', background: '#000' }}
+                                    onClick={() => handleEditProject(project)}
+                                >
+                                    <div style={{ transform: 'scale(0.35)', transformOrigin: 'top left', width: '286%', height: '286%', pointerEvents: 'none' }}>
+                                        <SandpackProvider
+                                            template="react"
+                                            theme="dark"
+                                            files={{
+                                                "/App.js": project.code,
+                                                "/styles.css": `@tailwind base;\n@tailwind components;\n@tailwind utilities;\nbody { font-family: sans-serif; background: #000; color: #fff; }`,
+                                                "/public/index.html": `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script></head><body><div id="root"></div></body></html>`
+                                            }}
+                                            options={{ externalResources: ["https://cdn.tailwindcss.com"] }}
+                                        >
+                                            <SandpackPreview showOpenInCodeSandbox={false} showRefreshButton={false} style={{ height: '100vh', background: '#000' }} />
+                                        </SandpackProvider>
+                                    </div>
+                                </div>
+                                <div className="project-info p-4 border-t border-gray-800 cursor-pointer flex items-center justify-between" onClick={() => handleEditProject(project)}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="user-avatar text-white bg-pink-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                            {session?.user?.email?.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <h3 className="font-semibold text-white truncate text-base">{project.name}</h3>
+                                            <p className="text-xs text-gray-500 truncate mt-0.5">Viewed {new Date(project.created_at).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="project-info p-4 border-t border-gray-100 cursor-pointer" onClick={() => handleEditProject(project)}>
-                                <h3 className="font-semibold text-gray-900 truncate">{project.name}</h3>
-                                <p className="text-xs text-gray-500 truncate mt-1">Published: {new Date(project.created_at).toLocaleDateString()}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </main>
+                        ))}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }
