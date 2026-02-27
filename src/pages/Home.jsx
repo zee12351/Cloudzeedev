@@ -6,15 +6,15 @@ import Walkthrough from '../components/Walkthrough';
 import CTA from '../components/CTA';
 import Footer from '../components/Footer';
 
-export default function Home() {
+export default function Home({ session }) {
     return (
         <>
-            <Header />
+            <Header session={session} />
             <main>
-                <Hero />
+                <Hero session={session} />
                 <Stats />
                 <Walkthrough />
-                <CTA />
+                <CTA session={session} />
             </main>
             <Footer />
         </>
