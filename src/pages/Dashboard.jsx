@@ -12,6 +12,32 @@ export default function Dashboard() {
     const [publishedProjects, setPublishedProjects] = useState([]);
     const [menuOpenId, setMenuOpenId] = useState(null);
 
+    const parseProjectCodeForSandpack = (code) => {
+        let parsedFiles = { "/src/App.jsx": code };
+        try {
+            const parsed = JSON.parse(code);
+            if (typeof parsed === 'object') {
+                parsedFiles = {};
+                Object.entries(parsed).forEach(([key, value]) => {
+                    let fileName = key.startsWith('/') ? key.substring(1) : key;
+                    if (fileName === 'App.js' || fileName === 'App') fileName = 'App.jsx';
+                    if (fileName === 'package.json' || fileName === 'vite.config.js' || fileName === 'index.html') {
+                        parsedFiles[`/${fileName}`] = value;
+                    } else {
+                        parsedFiles[`/src/${fileName}`] = value;
+                    }
+                });
+                if (!parsedFiles['/src/App.jsx'] && parsedFiles['/src/App.js']) {
+                    parsedFiles['/src/App.jsx'] = parsedFiles['/src/App.js'];
+                    delete parsedFiles['/src/App.js'];
+                }
+            }
+        } catch (e) {
+            // Fallback
+        }
+        return parsedFiles;
+    };
+
     const handleShare = () => {
         if (session?.user?.id) {
             const inviteLink = `${window.location.origin}/auth?ref=${session.user.id}`;
@@ -200,9 +226,8 @@ export default function Dashboard() {
                                             template="vite-react"
                                             theme="dark"
                                             files={{
-                                                "/App.js": project.code,
-                                                "/styles.css": `@tailwind base;\n@tailwind components;\n@tailwind utilities;\nbody { font-family: sans-serif; background: #000; color: #fff; }`,
-                                                "/public/index.html": `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script></head><body><div id="root"></div></body></html>`
+                                                ...parseProjectCodeForSandpack(project.code),
+                                                "/index.html": `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script></head><body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body></html>`
                                             }}
                                             options={{ externalResources: ["https://cdn.tailwindcss.com"] }}
                                         >

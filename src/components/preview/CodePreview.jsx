@@ -34,20 +34,36 @@ export default function CodePreview({ code }) {
 }
 `;
 
-  let parsedFiles = { "/App.js": code || defaultAppCode };
+  let parsedFiles = { "/src/App.jsx": code || defaultAppCode };
   if (code) {
     try {
       const parsed = JSON.parse(code);
       if (typeof parsed === 'object') {
-        parsedFiles = parsed;
-        // Ensure there's an App.js mapping
-        if (!parsedFiles['/App.js'] && parsedFiles['App.js']) {
-          parsedFiles['/App.js'] = parsedFiles['App.js'];
-          delete parsedFiles['App.js'];
+        parsedFiles = {};
+        Object.entries(parsed).forEach(([key, value]) => {
+          let fileName = key.startsWith('/') ? key.substring(1) : key;
+
+          // Ensure React components use .jsx extension for Vite
+          if (fileName === 'App.js' || fileName === 'App') {
+            fileName = 'App.jsx';
+          }
+
+          // Place inside /src/ unless it's a structural root file
+          if (fileName === 'package.json' || fileName === 'vite.config.js' || fileName === 'index.html') {
+            parsedFiles[`/${fileName}`] = value;
+          } else {
+            parsedFiles[`/src/${fileName}`] = value;
+          }
+        });
+
+        // Ensure App.jsx exists in src
+        if (!parsedFiles['/src/App.jsx'] && parsedFiles['/src/App.js']) {
+          parsedFiles['/src/App.jsx'] = parsedFiles['/src/App.js'];
+          delete parsedFiles['/src/App.js'];
         }
       }
     } catch (e) {
-      // not JSON, fallback to treating it as raw App.js code
+      // not JSON, fallback to treating it as raw App.jsx code
     }
   }
 
@@ -66,6 +82,7 @@ export default function CodePreview({ code }) {
   </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
 `;
@@ -105,7 +122,7 @@ export default function CodePreview({ code }) {
             theme="dark"
             files={{
               ...parsedFiles,
-              "/public/index.html": indexHtml,
+              "/index.html": indexHtml,
             }}
             customSetup={{
               dependencies: {

@@ -26,17 +26,27 @@ export default function LivePreview() {
   </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>`;
 
-    let parsedFiles = { "/App.js": code };
+    let parsedFiles = { "/src/App.jsx": code };
     try {
         const parsed = JSON.parse(code);
         if (typeof parsed === 'object') {
-            parsedFiles = parsed;
-            if (!parsedFiles['/App.js'] && parsedFiles['App.js']) {
-                parsedFiles['/App.js'] = parsedFiles['App.js'];
-                delete parsedFiles['App.js'];
+            parsedFiles = {};
+            Object.entries(parsed).forEach(([key, value]) => {
+                let fileName = key.startsWith('/') ? key.substring(1) : key;
+                if (fileName === 'App.js' || fileName === 'App') fileName = 'App.jsx';
+                if (fileName === 'package.json' || fileName === 'vite.config.js' || fileName === 'index.html') {
+                    parsedFiles[`/${fileName}`] = value;
+                } else {
+                    parsedFiles[`/src/${fileName}`] = value;
+                }
+            });
+            if (!parsedFiles['/src/App.jsx'] && parsedFiles['/src/App.js']) {
+                parsedFiles['/src/App.jsx'] = parsedFiles['/src/App.js'];
+                delete parsedFiles['/src/App.js'];
             }
         }
     } catch (e) {
@@ -50,7 +60,7 @@ export default function LivePreview() {
                 theme="dark"
                 files={{
                     ...parsedFiles,
-                    "/public/index.html": indexHtml,
+                    "/index.html": indexHtml,
                 }}
                 customSetup={{
                     dependencies: {
