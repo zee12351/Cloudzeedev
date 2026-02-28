@@ -37,8 +37,10 @@ export default function LivePreview() {
             parsedFiles = {};
             Object.entries(parsed).forEach(([key, value]) => {
                 let fileName = key.startsWith('/') ? key.substring(1) : key;
+                if (fileName === 'package.json') return;
+
                 if (fileName === 'App.js' || fileName === 'App') fileName = 'App.jsx';
-                if (fileName === 'package.json' || fileName === 'vite.config.js' || fileName === 'index.html') {
+                if (fileName === 'vite.config.js' || fileName === 'index.html') {
                     parsedFiles[`/${fileName}`] = value;
                 } else {
                     parsedFiles[`/src/${fileName}`] = value;

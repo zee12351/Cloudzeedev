@@ -43,13 +43,16 @@ export default function CodePreview({ code }) {
         Object.entries(parsed).forEach(([key, value]) => {
           let fileName = key.startsWith('/') ? key.substring(1) : key;
 
+          // Ignore AI-generated package.json to prevent Sandpack from reverting to CRA template
+          if (fileName === 'package.json') return;
+
           // Ensure React components use .jsx extension for Vite
           if (fileName === 'App.js' || fileName === 'App') {
             fileName = 'App.jsx';
           }
 
           // Place inside /src/ unless it's a structural root file
-          if (fileName === 'package.json' || fileName === 'vite.config.js' || fileName === 'index.html') {
+          if (fileName === 'vite.config.js' || fileName === 'index.html') {
             parsedFiles[`/${fileName}`] = value;
           } else {
             parsedFiles[`/src/${fileName}`] = value;
