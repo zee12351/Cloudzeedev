@@ -14,6 +14,10 @@ export default function Auth() {
     const navigate = useNavigate();
     const initialPrompt = location.state?.initialPrompt;
 
+    // Parse referral code from URL if it exists
+    const searchParams = new URLSearchParams(location.search);
+    const referralId = searchParams.get('ref');
+
     const handleGoogleAuth = async () => {
         setLoading(true);
         setMessage({ text: '', type: '' });
@@ -42,7 +46,15 @@ export default function Auth() {
                     navigate('/workspace/new', { state: { initialPrompt } });
                 }
             } else {
-                const { error } = await supabase.auth.signUp({ email, password });
+                const { error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            referee: referralId || null
+                        }
+                    }
+                });
                 if (error) throw error;
                 setMessage({ text: 'Check your email for the login link!', type: 'success' });
             }

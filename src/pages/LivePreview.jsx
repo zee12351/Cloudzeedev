@@ -46,7 +46,7 @@ export default function LivePreview() {
     return (
         <div className="h-screen w-full bg-[#0A0A0A] overflow-hidden">
             <SandpackProvider
-                template="react"
+                template="vite-react"
                 theme="dark"
                 files={{
                     ...parsedFiles,

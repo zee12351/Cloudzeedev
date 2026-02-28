@@ -11,9 +11,35 @@ CREATE TABLE public.profiles (
 -- Automatically create a profile when a new user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
 RETURNS TRIGGER AS $$
+DECLARE
+    referrer_id UUID;
+    starting_credits INTEGER;
 BEGIN
+    -- Setup starting credits, give zeepharma absolute unlimited
+    IF new.email = 'zeepharma1@gmail.com' THEN
+        starting_credits := 999999;
+    ELSE
+        starting_credits := 5;
+    END IF;
+
+    -- Extract referee (referrer ID) from raw_user_meta_data if it exists
+    BEGIN
+        referrer_id := (new.raw_user_meta_data->>'referee')::UUID;
+    EXCEPTION WHEN OTHERS THEN
+        referrer_id := NULL;
+    END;
+
+    -- Insert new user with initial credits
     INSERT INTO public.profiles (id, email, credits)
-    VALUES (new.id, new.email, 5);
+    VALUES (new.id, new.email, starting_credits);
+
+    -- If a valid referrer exists, give them +5 credits 
+    IF referrer_id IS NOT NULL THEN
+        UPDATE public.profiles
+        SET credits = credits + 5
+        WHERE id = referrer_id;
+    END IF;
+
     RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

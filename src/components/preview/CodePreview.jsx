@@ -101,7 +101,7 @@ export default function CodePreview({ code }) {
       <div className="preview-canvas flex-1 flex flex-col bg-neutral-900 relative overflow-hidden">
         <div className="sandpack-wrapper w-full h-full flex flex-col absolute inset-0">
           <SandpackProvider
-            template="react"
+            template="vite-react"
             theme="dark"
             files={{
               ...parsedFiles,

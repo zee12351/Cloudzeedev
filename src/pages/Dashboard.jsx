@@ -10,8 +10,17 @@ export default function Dashboard() {
     const { session } = useAuth();
     const navigate = useNavigate();
     const [publishedProjects, setPublishedProjects] = useState([]);
-
     const [menuOpenId, setMenuOpenId] = useState(null);
+
+    const handleShare = () => {
+        if (session?.user?.id) {
+            const inviteLink = `${window.location.origin}/auth?ref=${session.user.id}`;
+            navigator.clipboard.writeText(inviteLink);
+            toast.success("Referral link copied to clipboard! You earn 5 credits for each sign-up.");
+        } else {
+            toast.error("You need to be logged in to share a referral link.");
+        }
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -117,7 +126,7 @@ export default function Dashboard() {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button className="sidebar-action-card">
+                    <button onClick={handleShare} className="sidebar-action-card">
                         <div className="action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 12 20 22 4 22 4 12" /><rect x="2" y="7" width="20" height="5" /><line x1="12" y1="22" x2="12" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></svg></div>
                         <div className="action-text">
                             <div className="font-semibold text-white">Share CloudzeeDev</div>
@@ -188,7 +197,7 @@ export default function Dashboard() {
                                 >
                                     <div style={{ transform: 'scale(0.35)', transformOrigin: 'top left', width: '286%', height: '286%', pointerEvents: 'none' }}>
                                         <SandpackProvider
-                                            template="react"
+                                            template="vite-react"
                                             theme="dark"
                                             files={{
                                                 "/App.js": project.code,
