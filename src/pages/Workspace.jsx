@@ -23,6 +23,8 @@ export default function Workspace() {
     const [loadedChatId, setLoadedChatId] = useState(null);
     const [code, setCode] = useState('');
     const [credits, setCredits] = useState(null);
+    const [versions, setVersions] = useState([]);
+    const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
     const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [publishType, setPublishType] = useState('public');
@@ -78,6 +80,22 @@ export default function Workspace() {
                         console.error("Failed to load saved messages", e);
                         setMessages([{ role: 'ai', content: 'Hi there! What would you like to build today?' }]);
                     }
+
+                    try {
+                        // Fetch Versions
+                        const { data: versionsData, error: versionsError } = await supabase
+                            .from('project_versions')
+                            .select('*')
+                            .eq('project_id', id)
+                            .order('created_at', { ascending: false });
+
+                        if (!versionsError && versionsData) {
+                            setVersions(versionsData);
+                        }
+                    } catch (e) {
+                        console.error("Failed to load versions", e);
+                    }
+
                     setLoadedChatId(id);
                 }
             }
@@ -302,6 +320,13 @@ ${code}
                         if (data && data.id) {
                             setProjectName(data.name);
 
+                            // Save initial version
+                            await supabase.from('project_versions').insert([{
+                                project_id: data.id,
+                                code: generatedCode,
+                                prompt: messageContent
+                            }]);
+
                             // Auto-save messages to new project ID database storage
                             const updatedMessages = [...newMessages, { role: 'ai', content: chatResponse || 'Here is your generated code!' }];
                             const inserts = updatedMessages.map(msg => ({
@@ -317,6 +342,25 @@ ${code}
                     } catch (e) {
                         console.error("Failed to create new project in Database", e);
                         toast.error("Failed to auto-save project.");
+                    }
+                } else {
+                    // Save new version to existing project
+                    try {
+                        const { data: newVersion, error } = await supabase
+                            .from('project_versions')
+                            .insert([{
+                                project_id: id,
+                                code: generatedCode,
+                                prompt: messageContent
+                            }])
+                            .select()
+                            .single();
+
+                        if (!error && newVersion) {
+                            setVersions(prev => [newVersion, ...prev]);
+                        }
+                    } catch (e) {
+                        console.error("Failed to save project version", e);
                     }
                 }
             }
@@ -505,6 +549,10 @@ body {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         Export
                     </button>
+                    <button onClick={() => setIsVersionsModalOpen(true)} className="btn btn-secondary share-btn px-4 border-gray-300 gap-2 flex items-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+                        History
+                    </button>
                     <button onClick={() => setIsPublishModalOpen(true)} className="btn btn-secondary share-btn px-4">Publish</button>
 
                     <div className="relative">
@@ -617,6 +665,51 @@ body {
                     </div>
                 )
             }
+
+            {/* Versions Modal */}
+            {isVersionsModalOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                    <div className="bg-[#111] border border-white/10 rounded-2xl p-6 max-w-lg w-full shadow-2xl animate-fade-in text-white relative">
+                        <button onClick={() => setIsVersionsModalOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-white">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+                            Version History
+                        </h2>
+                        <p className="text-neutral-400 text-sm mb-6">Restore your project to any previous generation. Note: This replaces your current active code.</p>
+
+                        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                            {versions.length === 0 ? (
+                                <p className="text-center text-neutral-500 py-8">No version history available for this project yet.</p>
+                            ) : (
+                                versions.map((ver, idx) => (
+                                    <div key={ver.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3 group">
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <span className="text-xs font-semibold px-2 py-1 bg-white/10 text-neutral-300 rounded-md">v{versions.length - idx}</span>
+                                                <span className="text-xs text-neutral-500 ml-3">{new Date(ver.created_at).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-neutral-300 line-clamp-2 italic">"{ver.prompt}"</p>
+                                        <button
+                                            onClick={() => {
+                                                setCode(ver.code);
+                                                setIsVersionsModalOpen(false);
+                                                toast.success(`Restored to version ${versions.length - idx}!`);
+                                            }}
+                                            className="w-full mt-2 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-sm font-medium transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2"
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                                            Restore Version
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

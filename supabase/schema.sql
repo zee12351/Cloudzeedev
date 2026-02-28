@@ -63,3 +63,48 @@ CREATE POLICY "Users can CRUD own projects"
 -- Anyone can view public projects
 CREATE POLICY "Anyone can view public projects" 
     ON public.projects FOR SELECT USING (type = 'public');
+
+-- 4. Create Project Messages table for cloud-based chat history
+CREATE TABLE public.project_messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('user', 'ai', 'system')),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.project_messages ENABLE ROW LEVEL SECURITY;
+
+-- Users can only read and write messages for their own projects
+CREATE POLICY "Users can CRUD messages for their projects" 
+    ON public.project_messages 
+    FOR ALL 
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.projects 
+            WHERE projects.id = project_messages.project_id 
+            AND projects.user_id = auth.uid()
+        )
+    );
+
+-- 5. Create Project Versions table for Undo History / Version Control
+CREATE TABLE public.project_versions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
+    code TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.project_versions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can CRUD versions for their projects" 
+    ON public.project_versions 
+    FOR ALL 
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.projects 
+            WHERE projects.id = project_versions.project_id 
+            AND projects.user_id = auth.uid()
+        )
+    );
