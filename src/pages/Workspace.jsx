@@ -8,6 +8,8 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 export default function Workspace() {
     const { session } = useAuth();
@@ -215,6 +217,15 @@ Core Engineering Principles:
 8. Output Format: Output conversational text first, then exactly ONE code block starting with \`\`\`json and ending with \`\`\`. The JSON object MUST map file paths as keys (e.g., "/App.js", "/components/Header.js") to their string code as values. The main entry point MUST be "/App.js".
 9. The Goal: Every output must look like a $50k/month SaaS product. Do not settle for "basic" or "placeholder" styles. Use lucide-react for beautiful icons.`;
 
+            let finalSystemPrompt = systemPrompt;
+            if (code) {
+                finalSystemPrompt += `\n\n--- CURRENT SOURCE CODE ---
+The following is the current state of the application's source code in JSON format. You MUST use this as your baseline. If the user asks for a modification, apply the modification to this existing code. Do NOT recreate the app from scratch unless explicitly asked. Always return the FULL updated JSON array containing all necessary files.
+\`\`\`json
+${code}
+\`\`\``;
+            }
+
             const contents = newMessages.map(msg => ({
                 role: msg.role === 'ai' ? 'model' : 'user',
                 parts: [{ text: msg.content }]
@@ -223,7 +234,7 @@ Core Engineering Principles:
             // Inject system instructions as the first message
             const payload = {
                 contents: [
-                    { role: 'user', parts: [{ text: systemPrompt }] },
+                    { role: 'user', parts: [{ text: finalSystemPrompt }] },
                     { role: 'model', parts: [{ text: "Understood. I will act as the CloudzeeDev AI developer according to those rules and output exactly ONE ```json block containing the multi-file architecture." }] },
                     ...contents
                 ],
@@ -334,6 +345,136 @@ Core Engineering Principles:
         }
     }, [location.state?.initialPrompt, session, navigate, credits]);
 
+    const handleExportProject = async () => {
+        if (!code) {
+            toast.error("No code available to export!");
+            return;
+        }
+
+        try {
+            const zip = new JSZip();
+            let parsedFiles = { "/App.js": code };
+
+            try {
+                const parsed = JSON.parse(code);
+                if (typeof parsed === 'object') {
+                    parsedFiles = parsed;
+                }
+            } catch (e) {
+                // Not JSON, just a single file
+            }
+
+            // Create standard Vite project structure
+            const srcFolder = zip.folder("src");
+
+            // Add all the generated files into the src directory
+            Object.entries(parsedFiles).forEach(([path, content]) => {
+                const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+                srcFolder.file(cleanPath, content);
+            });
+
+            // Add standard Vite boilerplate files
+            zip.file("package.json", JSON.stringify({
+                "name": projectName.toLowerCase().replace(/\s+/g, '-'),
+                "private": true,
+                "version": "0.0.0",
+                "type": "module",
+                "scripts": {
+                    "dev": "vite",
+                    "build": "vite build",
+                    "preview": "vite preview"
+                },
+                "dependencies": {
+                    "react": "^18.2.0",
+                    "react-dom": "^18.2.0",
+                    "lucide-react": "latest",
+                    "framer-motion": "latest",
+                    "recharts": "latest",
+                    "clsx": "latest",
+                    "tailwind-merge": "latest"
+                },
+                "devDependencies": {
+                    "@types/react": "^18.2.43",
+                    "@types/react-dom": "^18.2.17",
+                    "@vitejs/plugin-react": "^4.2.1",
+                    "autoprefixer": "^10.4.17",
+                    "postcss": "^8.4.33",
+                    "tailwindcss": "^3.4.1",
+                    "vite": "^5.0.8"
+                }
+            }, null, 2));
+
+            zip.file("index.html", `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${projectName}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>`);
+
+            zip.file("tailwind.config.js", `/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}`);
+
+            zip.file("postcss.config.js", `export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}`);
+
+            zip.file("vite.config.js", `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})`);
+
+            srcFolder.file("main.jsx", `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)`);
+
+            srcFolder.file("index.css", `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background-color: #0A0A0A;
+  color: #fff;
+}`);
+
+            const blob = await zip.generateAsync({ type: "blob" });
+            saveAs(blob, `${projectName.replace(/\s+/g, '-').toLowerCase()}-export.zip`);
+            toast.success("Project downloaded successfully!");
+
+        } catch (error) {
+            console.error("Export failed", error);
+            toast.error("Failed to export project: " + error.message);
+        }
+    };
+
     return (
         <div className="workspace-container">
             {/* Workspace Header */}
@@ -360,6 +501,10 @@ Core Engineering Principles:
                     <Link to="/pricing" className={`text-sm px-3 py-1 rounded-full border ${session?.user?.email === 'zeepharma1@gmail.com' || credits > 5 ? 'border-gray-200 text-gray-500 hover:text-gray-900 bg-white' : 'border-red-200 text-red-600 bg-red-50'} `}>
                         <span className="font-medium">{session?.user?.email === 'zeepharma1@gmail.com' ? 'Unlimited' : credits}</span> credits remaining
                     </Link>
+                    <button onClick={handleExportProject} className="btn btn-secondary share-btn px-4 border-gray-300 gap-2 flex items-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export
+                    </button>
                     <button onClick={() => setIsPublishModalOpen(true)} className="btn btn-secondary share-btn px-4">Publish</button>
 
                     <div className="relative">
