@@ -26,6 +26,9 @@ export default function Workspace() {
     const [versions, setVersions] = useState([]);
     const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
     const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+
+    // Add streaming state
+    const [isStreamingMsg, setIsStreamingMsg] = useState('');
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [publishType, setPublishType] = useState('public');
     const location = useLocation();
@@ -263,22 +266,57 @@ ${code}
 
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAypZOFLoJq8LccQAqv4Lt7YulJaCDVNmY';
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`, {
+            // Use streamGenerateContent instead of generateContent
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
+                const data = await response.json();
                 console.error("Gemini API Error Payload:", data);
                 throw new Error(data.error?.message || 'Failed to generate response');
             }
 
-            const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            // Read the stream
+            const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+            let generatedText = '';
 
-            // 3. Parse and Split response into Chat text vs JSON Code blocks
+            setIsStreamingMsg('');
+
+            // Append a temporary empty AI message slot to the UI
+            setMessages(prev => [...prev, { role: 'ai', content: '' }]);
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                // Combine chunks
+                generatedText += value;
+
+                // Update the UI character by character
+                // We'll extract only the conversational text to display in the chat, ignoring the JSON.
+                // Or simply display everything until we hit ```json
+                let displayString = generatedText;
+                const jsonStartIdx = displayString.indexOf('```json');
+                if (jsonStartIdx !== -1) {
+                    displayString = displayString.substring(0, jsonStartIdx).trim();
+                } else {
+                    const altJsonStart = displayString.indexOf('```');
+                    if (altJsonStart !== -1) {
+                        displayString = displayString.substring(0, altJsonStart).trim();
+                    }
+                }
+
+                setMessages(prev => {
+                    const newMsgs = [...prev];
+                    newMsgs[newMsgs.length - 1].content = displayString || 'Thinking...';
+                    return newMsgs;
+                });
+            }
+
+            // 3. Post-Streaming: Parse and Split final response into Chat text vs JSON Code blocks
             const codeBlockRegex = /\`\`\`(?:json)?\n([\s\S]*?)\n\`\`\`/i;
             const match = generatedText.match(codeBlockRegex);
 
@@ -291,10 +329,16 @@ ${code}
                 chatResponse = generatedText.replace(match[0], '').trim();
             }
 
-            setMessages(prev => [...prev, { role: 'ai', content: chatResponse || 'Here is your generated code!' }]);
+            setMessages(prev => {
+                const finalMsgs = [...prev];
+                finalMsgs[finalMsgs.length - 1].content = chatResponse || 'Here is your generated code!';
+                return finalMsgs;
+            });
+
             if (generatedCode) {
                 setCode(generatedCode);
                 setActiveTab('preview');
+
 
                 // Phase 9: Auto-save functionality for new generation prompts using Postgres
                 if (id === 'new') {
@@ -363,8 +407,7 @@ ${code}
                         console.error("Failed to save project version", e);
                     }
                 }
-            }
-
+            } // This closes if (generatedCode)
 
         } catch (error) {
             console.error(error);
